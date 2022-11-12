@@ -6,7 +6,7 @@ import * as yup from 'yup'
 
 const AddStudentCard = () => {
 	const history = useHistory()
-	const student = JSON.parse(localStorage.getItem('user'))
+	const [student, setStudent] = useState()
 	const [data, setData] = useState({
 		name: '',
 		lastName: '',
@@ -17,7 +17,11 @@ const AddStudentCard = () => {
 	const [errors, setErrors] = useState({})
 
 	useEffect(() => {
-		student && setData(JSON.parse(localStorage.getItem('user')))
+		localStorage.length > 0 &&
+			setData(JSON.parse(localStorage.getItem('user')))
+	}, [])
+	useEffect(() => {
+		setStudent(localStorage.length)
 	}, [])
 
 	useEffect(() => {
@@ -29,15 +33,26 @@ const AddStudentCard = () => {
 			.string()
 			.required('Портфолио обязательно для заполнения')
 			.url('Портфолио должно быть ссылкой'),
+
 		burnYear: yup
 			.string()
+			.required('Возраст обязателен для заполнения')
 			.min(4, 'Введен не корректный год')
 			.test('isCorrect', 'Введен не корректный год', value =>
 				Promise.resolve(value < 2022)
+			)
+			.test('isCorrect', 'Введен не корректный год', value =>
+				Promise.resolve(value > 1906)
 			),
 
-		lastName: yup.string().required('Фамилия обязательно для заполнения'),
-		name: yup.string().required('Имя обязательно для заполнения')
+		lastName: yup
+			.string()
+			.required('Фамилия обязательно для заполнения')
+			.matches(/\D+/g, 'Фамилия не может быть цифрой'),
+		name: yup
+			.string()
+			.required('Имя обязательно для заполнения')
+			.matches(/\D+/g, 'Имя не может быть цифрой')
 	})
 
 	const validate = () => {
@@ -62,7 +77,7 @@ const AddStudentCard = () => {
 		setShowModal(prevState => !prevState)
 		localStorage.setItem('user', JSON.stringify(data))
 	}
-
+	const isValid = Object.keys(errors).length === 0
 	return (
 		<>
 			<div className="container mt-5">
@@ -103,11 +118,12 @@ const AddStudentCard = () => {
 								error={errors.portfolio}
 							/>
 
-							<button className="btn btn-dark">
-								{student ? 'Обновить' : 'Создать'}
+							<button disabled={!isValid} className="btn btn-dark">
+								{student > 0 ? 'Обновить' : 'Создать'}
 							</button>
-							{student && (
+							{student > 0 && (
 								<button
+									disabled={!isValid}
 									type="button"
 									onClick={handelBack}
 									className="btn btn-primary m-3">
